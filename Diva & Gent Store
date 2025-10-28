@@ -1,0 +1,199 @@
+import React, { useState, useEffect } from "react";
+
+// Diva & Gent Store - Single-file React component // - Trilingual (Kreyòl / Français / English) // - Admin panel (password protected) that saves products to localStorage // - Products include title, price, category, sizes, and an image (base64) // - WhatsApp "buy" button uses +50938580682 // - Styling uses Tailwind-like classes (you can use Tailwind or plain CSS)
+
+// DEFAULT ADMIN PASSWORD (change after first login): diva123
+
+const LANGS = { ht: "Kreyòl", fr: "Français", en: "English", };
+
+const DEFAULT_PRODUCTS = [ { id: "p1", title: { ht: "Chemizèt Diva", fr: "T-shirt Diva", en: "Diva T-shirt" }, desc: { ht: "Chemizèt koton konfòtab, stil modèn.", fr: "T-shirt coton confortable, coupe moderne.", en: "Comfortable cotton t-shirt, modern cut.", }, price: "1250 HTG", category: "Rad Fanm", sizes: ["S", "M", "L"], img: "", }, { id: "p2", title: { ht: "Pantalon Gentle", fr: "Pantalon Gentle", en: "Gentle Pants" }, desc: { ht: "Pantalon élégance pou gason.", fr: "Pantalon élégant pour homme.", en: "Elegant pants for men.", }, price: "1800 HTG", category: "Rad Gason", sizes: ["M", "L", "XL"], img: "", }, ];
+
+export default function DivaGentStoreApp() { const [lang, setLang] = useState("ht"); const [isAdmin, setIsAdmin] = useState(false); const [products, setProducts] = useState([]); const [view, setView] = useState("home"); // home | products | about | contact | admin const [adminPassInput, setAdminPassInput] = useState("");
+
+// form states for adding product const [form, setForm] = useState({ title_ht: "", title_fr: "", title_en: "", desc_ht: "", desc_fr: "", desc_en: "", price: "", category: "Rad Fanm", sizes: "S,M,L", imgData: "", });
+
+useEffect(() => { // load products from localStorage or set defaults const raw = localStorage.getItem("diva_products_v1"); if (raw) { try { setProducts(JSON.parse(raw)); } catch (e) { setProducts(DEFAULT_PRODUCTS); } } else { setProducts(DEFAULT_PRODUCTS); localStorage.setItem("diva_products_v1", JSON.stringify(DEFAULT_PRODUCTS)); } }, []);
+
+useEffect(() => { localStorage.setItem("diva_products_v1", JSON.stringify(products)); }, [products]);
+
+// ADMIN LOGIN const ADMIN_PASS_KEY = "diva_admin_password_v1"; // stored hashed? for demo stored plain (change)
+
+useEffect(() => { // if no password chosen, set default const p = localStorage.getItem(ADMIN_PASS_KEY); if (!p) localStorage.setItem(ADMIN_PASS_KEY, "diva123"); }, []);
+
+function handleAdminLogin(e) { e.preventDefault(); const stored = localStorage.getItem(ADMIN_PASS_KEY) || "diva123"; if (adminPassInput === stored) { setIsAdmin(true); setView("admin"); setAdminPassInput(""); } else { alert("Modpas administratè pa kòrèk / Le mot de passe est incorrect / Incorrect password"); } }
+
+function handleAddProduct(e) { e.preventDefault(); const newP = { id: "p" + Date.now(), title: { ht: form.title_ht, fr: form.title_fr, en: form.title_en }, desc: { ht: form.desc_ht, fr: form.desc_fr, en: form.desc_en }, price: form.price, category: form.category, sizes: form.sizes.split(",").map((s) => s.trim()).filter(Boolean), img: form.imgData, }; setProducts([newP, ...products]); setForm({ title_ht: "", title_fr: "", title_en: "", desc_ht: "", desc_fr: "", desc_en: "", price: "", category: "Rad Fanm", sizes: "S,M,L", imgData: "", }); alert("Pwodwi a ajoute! / Produit ajouté! / Product added!"); }
+
+function handleImageUpload(file) { const reader = new FileReader(); reader.onload = function (ev) { setForm((s) => ({ ...s, imgData: ev.target.result })); }; reader.readAsDataURL(file); }
+
+function removeProduct(id) { if (!confirm("Efase pwodwi sa a? / Supprimer ce produit? / Delete this product?")) return; setProducts(products.filter((p) => p.id !== id)); }
+
+function whatsappLinkForProduct(p, size) { const base = "+50938580682"; const msg = encodeURIComponent( (lang === "ht" ? "Mwen enterese nan" : lang === "fr" ? "Je suis intéressé par" : "I'm interested in") +  ${p.title[lang] || p.title.en} (Size: ${size || "-"}) — Pri: ${p.price}. Tanpri kontakte m pou kòmand. ); return https://wa.me/${base}?text=${msg}; }
+
+return ( <div className="min-h-screen font-sans bg-gradient-to-b from-white via-gray-50 to-white text-gray-900"> <header className="max-w-5xl mx-auto p-4 flex items-center justify-between"> <div className="flex items-center gap-4"> <div className="w-14 h-14 rounded-full bg-black text-white flex items-center justify-center text-lg font-bold">DG</div> <div> <h1 className="text-2xl font-bold">Diva & Gent Store</h1> <div className="text-sm text-gray-600">{lang === "ht" ? "Kite nou klere w" : lang === "fr" ? "Laissez-nous vous faire briller" : "Let us make you shine"}</div> </div> </div>
+
+<div className="flex items-center gap-3">
+      <nav className="hidden sm:flex gap-3">
+        <button onClick={() => setView("home")} className="px-3 py-1">{lang === "ht" ? "Akèy" : lang === "fr" ? "Accueil" : "Home"}</button>
+        <button onClick={() => setView("products")} className="px-3 py-1">{lang === "ht" ? "Pwodwi" : lang === "fr" ? "Produits" : "Products"}</button>
+        <button onClick={() => setView("about")} className="px-3 py-1">{lang === "ht" ? "A Propos" : lang === "fr" ? "À propos" : "About"}</button>
+        <button onClick={() => setView("contact")} className="px-3 py-1">{lang === "ht" ? "Kontakte nou" : lang === "fr" ? "Contactez-nous" : "Contact"}</button>
+      </nav>
+
+      <div className="flex items-center gap-2">
+        {Object.keys(LANGS).map((k) => (
+          <button key={k} onClick={() => setLang(k)} className={`px-2 py-1 rounded ${lang === k ? "bg-black text-white" : "bg-gray-100"}`}>{LANGS[k]}</button>
+        ))}
+      </div>
+
+      <a href={`https://wa.me/50938580682`} target="_blank" rel="noreferrer" className="ml-3 px-3 py-2 bg-yellow-400 rounded shadow font-semibold">WhatsApp</a>
+    </div>
+  </header>
+
+  <main className="max-w-5xl mx-auto p-4">
+    {view === "home" && (
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <div>
+          <h2 className="text-3xl font-bold">{lang === "ht" ? "Byenveni nan Diva & Gent Store" : lang === "fr" ? "Bienvenue chez Diva & Gent Store" : "Welcome to Diva & Gent Store"}</h2>
+          <p className="mt-3 text-gray-700">{lang === "ht" ? "Bèl rad ak akseswa pou chak okazyon. Achte fasil ak kontakte nou sou WhatsApp." : lang === "fr" ? "Beaux vêtements et accessoires pour toutes les occasions. Commandez facilement via WhatsApp." : "Beautiful clothing and accessories for every occasion. Order easily via WhatsApp."}</p>
+
+          <div className="mt-4 flex gap-3">
+            <button onClick={() => setView("products")} className="px-4 py-2 bg-black text-white rounded">{lang === "ht" ? "Gade pwodwi" : lang === "fr" ? "Voir les produits" : "See products"}</button>
+            <a href={`https://wa.me/50938580682`} target="_blank" rel="noreferrer" className="px-4 py-2 border rounded">{lang === "ht" ? "Kontakte nou" : lang === "fr" ? "Contactez-nous" : "Contact us"}</a>
+          </div>
+
+          <div className="mt-6 text-sm text-gray-600">{lang === "ht" ? "Livrezon disponib. Peye atravè MonCash oswa lòt metòd sou negosyasyon." : lang === "fr" ? "Livraison disponible. Paiement via MonCash ou autre selon arrangement." : "Delivery available. Pay with MonCash or other methods on arrangement."}</div>
+        </div>
+
+        <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg p-6 shadow flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-64 h-64 bg-gray-200 rounded-lg flex items-center justify-center">LOGO / PHOTO</div>
+            <div className="mt-4 text-sm text-gray-600">Diva & Gent Store</div>
+          </div>
+        </div>
+      </section>
+    )}
+
+    {view === "products" && (
+      <section>
+        <h3 className="text-2xl font-bold mb-4">{lang === "ht" ? "Pwodwi nou yo" : lang === "fr" ? "Nos produits" : "Our products"}</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {products.map((p) => (
+            <div key={p.id} className="border rounded p-3 bg-white shadow-sm">
+              <div className="w-full h-48 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
+                {p.img ? <img src={p.img} alt={p.title[lang] || p.title.en} className="object-contain h-full" /> : <div className="text-gray-400">No image</div>}
+              </div>
+              <h4 className="mt-3 font-semibold">{p.title[lang] || p.title.en}</h4>
+              <div className="text-sm text-gray-600">{p.desc[lang] || p.desc.en}</div>
+              <div className="mt-2 font-bold">{p.price}</div>
+
+              <div className="mt-3 flex gap-2 flex-wrap">
+                {(p.sizes || []).map((s) => (
+                  <a key={s} href={whatsappLinkForProduct(p, s)} target="_blank" rel="noreferrer" className="px-2 py-1 border rounded text-sm">{lang === "ht" ? "Achte" : lang === "fr" ? "Acheter" : "Buy"} {s}</a>
+                ))}
+              </div>
+
+              {isAdmin && (
+                <div className="mt-3 flex justify-between items-center">
+                  <button onClick={() => removeProduct(p.id)} className="text-sm text-red-600">Efase / Supprimer</button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+
+    {view === "about" && (
+      <section>
+        <h3 className="text-2xl font-bold">{lang === "ht" ? "A Propos" : lang === "fr" ? "À propos" : "About"}</h3>
+        <p className="mt-3 text-gray-700">{lang === "ht" ? "Diva & Gent Store se yon boutik ki pote bèl rad ak akseswa pou fè w klere. Nou ofri sèvis livrezon ak asirans sou satisfaksyon kliyan." : lang === "fr" ? "Diva & Gent Store est une boutique qui propose de beaux vêtements et accessoires pour vous faire briller. Livraison disponible." : "Diva & Gent Store is a boutique that offers beautiful clothing and accessories to make you shine. Delivery available."}</p>
+      </section>
+    )}
+
+    {view === "contact" && (
+      <section>
+        <h3 className="text-2xl font-bold">{lang === "ht" ? "Kontakte nou" : lang === "fr" ? "Contactez-nous" : "Contact"}</h3>
+        <div className="mt-3">
+          <p>{lang === "ht" ? "WhatsApp:" : lang === "fr" ? "WhatsApp:" : "WhatsApp:"} <a href={`https://wa.me/50938580682`} className="text-blue-600">+509 38 58 06 82</a></p>
+          <p className="mt-2 text-gray-600">{lang === "ht" ? "Livrezon disponib. Ekri nou sou WhatsApp pou detay sou peman ak livrezon." : lang === "fr" ? "Livraison disponible. Contactez-nous via WhatsApp pour paiement et livraison." : "Delivery available. Contact us on WhatsApp for payment and delivery."}</p>
+        </div>
+      </section>
+    )}
+
+    {view === "admin" && (
+      <section>
+        <h3 className="text-2xl font-bold">Admin</h3>
+        {!isAdmin ? (
+          <form onSubmit={handleAdminLogin} className="mt-4 max-w-md">
+            <label className="block text-sm">{lang === "ht" ? "Antre modpas admin" : lang === "fr" ? "Entrez le mot de passe admin" : "Enter admin password"}</label>
+            <input value={adminPassInput} onChange={(e) => setAdminPassInput(e.target.value)} className="w-full mt-2 p-2 border rounded" />
+            <div className="mt-3">
+              <button type="submit" className="px-4 py-2 bg-black text-white rounded">{lang === "ht" ? "Connexion" : lang === "fr" ? "Connexion" : "Login"}</button>
+            </div>
+          </form>
+        ) : (
+          <div className="mt-4">
+            <h4 className="font-semibold">{lang === "ht" ? "Ajoute yon nouvo pwodwi" : lang === "fr" ? "Ajouter un produit" : "Add a product"}</h4>
+            <form onSubmit={handleAddProduct} className="mt-3 grid grid-cols-1 gap-2">
+              <input placeholder="Title (Kreyòl)" value={form.title_ht} onChange={(e) => setForm({ ...form, title_ht: e.target.value })} className="p-2 border rounded" />
+              <input placeholder="Title (Français)" value={form.title_fr} onChange={(e) => setForm({ ...form, title_fr: e.target.value })} className="p-2 border rounded" />
+              <input placeholder="Title (English)" value={form.title_en} onChange={(e) => setForm({ ...form, title_en: e.target.value })} className="p-2 border rounded" />
+
+              <input placeholder="Short desc (Kreyòl)" value={form.desc_ht} onChange={(e) => setForm({ ...form, desc_ht: e.target.value })} className="p-2 border rounded" />
+              <input placeholder="Short desc (Français)" value={form.desc_fr} onChange={(e) => setForm({ ...form, desc_fr: e.target.value })} className="p-2 border rounded" />
+              <input placeholder="Short desc (English)" value={form.desc_en} onChange={(e) => setForm({ ...form, desc_en: e.target.value })} className="p-2 border rounded" />
+
+              <input placeholder="Pri (eg: 1250 HTG)" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="p-2 border rounded" />
+
+              <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="p-2 border rounded">
+                <option>Rad Fanm</option>
+                <option>Rad Gason</option>
+                <option>Akseswa</option>
+              </select>
+
+              <input placeholder="Sizes (separe pa , ex: S,M,L)" value={form.sizes} onChange={(e) => setForm({ ...form, sizes: e.target.value })} className="p-2 border rounded" />
+
+              <div>
+                <label className="block text-sm">{lang === "ht" ? "Chwazi foto" : lang === "fr" ? "Choisir une image" : "Choose image"}</label>
+                <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e.target.files[0])} className="mt-2" />
+                {form.imgData && <div className="mt-2 w-40 h-40 border"><img src={form.imgData} alt="preview" className="object-contain h-full w-full"/></div>}
+              </div>
+
+              <div className="mt-2">
+                <button type="submit" className="px-4 py-2 bg-black text-white rounded">{lang === "ht" ? "Ajoute pwodwi" : lang === "fr" ? "Ajouter" : "Add product"}</button>
+              </div>
+            </form>
+
+            <div className="mt-6">
+              <h4 className="font-semibold">{lang === "ht" ? "Jere pwodwi egziste yo" : lang === "fr" ? "Gérer les produits" : "Manage products"}</h4>
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {products.map((p) => (
+                  <div key={p.id} className="border rounded p-2">
+                    <div className="font-semibold">{p.title[lang] || p.title.en}</div>
+                    <div className="text-sm text-gray-600">{p.price}</div>
+                    <div className="mt-2 flex gap-2">
+                      <button onClick={() => removeProduct(p.id)} className="text-red-600 text-sm">{lang === "ht" ? "Efase" : lang === "fr" ? "Supprimer" : "Delete"}</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <button onClick={() => { setIsAdmin(false); setView('home'); }} className="px-3 py-1 border rounded">{lang === "ht" ? "Dekonekte" : lang === "fr" ? "Se déconnecter" : "Logout"}</button>
+            </div>
+          </div>
+        )}
+      </section>
+    )}
+  </main>
+
+  <footer className="mt-12 border-t py-6 text-center text-sm text-gray-600">
+    <div>Diva & Gent Store • {lang === "ht" ? "Kite nou klere w" : lang === "fr" ? "Laissez-nous vous faire briller" : "Let us make you shine"}</div>
+    <div className="mt-2">Contact: <a href={`https://wa.me/50938580682`} className="text-blue-600">+509 38 58 06 82</a></div>
+  </footer>
+</div>
+
+); }
+
